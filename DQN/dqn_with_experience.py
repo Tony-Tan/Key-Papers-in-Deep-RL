@@ -12,6 +12,7 @@ from collections import deque
 import random
 import time
 import os
+import torch.nn.functional as F
 
 
 class CustomDataset(utils_data.Dataset):
@@ -27,12 +28,14 @@ class CustomDataset(utils_data.Dataset):
 
 
 class Agent:
-    def __init__(self, env, k_frames=1, phi_temp_size=4, model_path='./model/'):
+    def __init__(self, env, k_frames=4, phi_temp_size=4, model_path='./model/'):
         self.env = env
         self.env_action_n = self.env.action_space.n
         self.state_value_function = Network.Net(4, self.env_action_n)
         self.k_frames = k_frames
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.criterion = nn.SmoothL1Loss()
+        self.optimizer = optim.Adam(self.state_value_function.parameters(), lr=1e-5)
         self.state_value_function.to(self.device)
         self.writer = SummaryWriter("./log/")
         self.down_sample_size = 84
@@ -49,24 +52,20 @@ class Agent:
     def convert_down_sample(self, state):
         image = np.array(state)
         gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        gray_img = cv2.resize(gray_img, (92, 110))
-        return gray_img[110 - 92:110, 0:92] / 255 - 0.5
+        gray_img = cv2.resize(gray_img, (84, 100))
+        ret, gray_img = cv2.threshold(gray_img, 80, 255, cv2.THRESH_BINARY)
+        return gray_img[100 - 84:100, 0:84]/255. - 0.5
 
     def select_action(self, state_phi, epsilon):
-        policies = np.zeros(self.env.action_space.n)
         state_phi_tensor = torch.from_numpy(state_phi).unsqueeze(0).to(self.device)
         state_action_values = self.state_value_function(state_phi_tensor).cpu().detach().numpy()
         value_of_action_list = state_action_values[0]
         optimal_action = np.random.choice(
             np.flatnonzero(value_of_action_list == value_of_action_list.max()))
-        for action_iter in range(self.env.action_space.n):
-            if action_iter == optimal_action:
-                policies[action_iter] = 1. - epsilon + epsilon / self.env.action_space.n
-            else:
-                policies[action_iter] = epsilon / self.env.action_space.n
-        probability_distribution = policies
-        action = np.random.choice(self.env.action_space.n, 1, p=probability_distribution)
-        return action[0]
+        if random.randint(0, 1000) < epsilon*1000:
+            return random.randint(0, self.env_action_n - 1)
+        else:
+            return optimal_action
 
     def phi(self):
         if len(self.phi_temp) > self.phi_temp_size:
@@ -85,12 +84,8 @@ class Agent:
                 break
         return new_state, reward, is_done, others
 
-    def train_state_value_function(self, memory, bach_size, gamma=0.999):
-
+    def train_state_value_function(self, memory, bach_size, gamma=0.99):
         # training parameter
-
-        criterion = nn.SmoothL1Loss()
-        optimizer = optim.Adam(self.state_value_function.parameters(), lr=1e-6)
         total_loss = 0
         # build label:
         next_state_data = [mem[3] for mem in memory]
@@ -140,14 +135,15 @@ class Agent:
             labels = labels.to(self.device).view(-1, 1)
             actions = action_array.to(self.device)
             # zero the parameter gradients
-            optimizer.zero_grad()
+            self.optimizer.zero_grad()
             # forward + backward + optimize
-            outputs = self.state_value_function(inputs).gather(0, actions)
+            outputs = self.state_value_function(inputs).gather(1, actions)
 
-            loss = criterion(outputs, labels)
+            loss = F.mse_loss(outputs, labels)
+            # Minimize the loss
+            self.optimizer.zero_grad()
             loss.backward()
-
-            optimizer.step()
+            self.optimizer.step()
             total_loss += loss.item()
             # record
             self.writer.add_scalar('train/loss', total_loss)
@@ -157,15 +153,14 @@ class Agent:
             #       (epo_i + 1, i + 1, total_loss / 100.))
             # total_loss = 0.0
 
-    def running(self, episodes_num, mini_bach_size,epsilon_start=0.9,
-                epsilon_end=0.1, epsilon_update=100, memory_length=20000):
+    def running(self, episodes_num, mini_bach_size, epsilon_start=1.,
+                epsilon_end=0.1, epsilon_decay=0.9995, memory_length=20000):
         memory = deque(maxlen=memory_length)
         frame_num = 0
         epsilon = epsilon_start
         for episode_i in range(1, episodes_num):
             # set a dynamic epsilon
-            if episode_i % epsilon_update == 0 and epsilon > epsilon_end:
-                epsilon -= 0.001
+            epsilon = max(epsilon_end, epsilon * epsilon_decay)
             total_reward = 0
             # random choice an action at the beginning of the process
             action = np.random.choice(self.env_action_n, 1)[0]
@@ -192,7 +187,7 @@ class Agent:
             new_state_phi = self.phi()
             # add phi(state) and phi(new state) and reward and action into memory
             memory.append([state_phi, action, reward, new_state_phi, is_done])
-
+            # step_num = 0
             while not is_done:
                 state_phi = new_state_phi
                 action = self.select_action(state_phi, epsilon)
@@ -201,18 +196,19 @@ class Agent:
                 frame_num += 1
                 total_reward += reward
                 new_state = self.convert_down_sample(np.array(new_state))
-                cv2.imshow('new_state', np.array((new_state + 0.5) * 255.).astype(np.uint8))
-                cv2.waitKey(1)
+                # cv2.imshow('new_state', np.array((new_state+0.5)*255.).astype(np.uint8))
+                # cv2.waitKey(1)
                 self.phi_temp.append(new_state)
                 new_state_phi = self.phi()
                 memory.append([state_phi, action, reward, new_state_phi, is_done])
-                if len(memory) >= memory_length:
+                if len(memory) > mini_bach_size:
                     sub_memory = random.sample(memory, mini_bach_size)
                     self.train_state_value_function(memory=sub_memory, bach_size=mini_bach_size)
+                # step_num += 1
             print("reward of episode: " + str(episode_i) + " is " + str(total_reward)
-                  + " and frame number is " + str(frame_num))
+                  + " and frame number is " + str(frame_num) + ' epsilon: ' + str(epsilon))
             self.writer.add_scalar('reward of episode', total_reward, episode_i)
-            if episode_i % 100 == 0:
+            if episode_i % 500 == 0:
                 print('model saved')
                 now = int(round(time.time() * 1000))
                 now02 = time.strftime('%m-%d-%H-%M-%S', time.localtime(now / 1000))
@@ -226,4 +222,4 @@ class Agent:
 if __name__ == '__main__':
     env = gym.make('Pong-v0')
     agent = Agent(env)
-    agent.running(episodes_num=10000, mini_bach_size=32)
+    agent.running(episodes_num=100000, mini_bach_size=32)
