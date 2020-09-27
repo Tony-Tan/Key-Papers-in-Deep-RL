@@ -35,7 +35,7 @@ class Agent:
         self.k_frames = k_frames
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.criterion = nn.SmoothL1Loss()
-        self.optimizer = optim.Adam(self.state_value_function.parameters(), lr=1e-5)
+        self.optimizer = optim.Adam(self.state_value_function.parameters(), lr=1e-6)
         self.state_value_function.to(self.device)
         self.writer = SummaryWriter("./log/")
         self.down_sample_size = 84
@@ -153,7 +153,7 @@ class Agent:
             #       (epo_i + 1, i + 1, total_loss / 100.))
             # total_loss = 0.0
 
-    def running(self, episodes_num, mini_bach_size, epsilon_start=1.,
+    def running(self, episodes_num, mini_bach_size, epsilon_start=0.1,
                 epsilon_end=0.1, epsilon_decay=0.9995, memory_length=20000):
         memory = deque(maxlen=memory_length)
         frame_num = 0
