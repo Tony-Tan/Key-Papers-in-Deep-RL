@@ -153,8 +153,8 @@ class Agent:
             #       (epo_i + 1, i + 1, total_loss / 100.))
             # total_loss = 0.0
 
-    def running(self, episodes_num, mini_bach_size, epsilon_start=0.1,
-                epsilon_end=0.1, epsilon_decay=0.9995, memory_length=20000):
+    def running(self, episodes_num, mini_bach_size, epsilon_start=1.0,
+                epsilon_end=0.1, epsilon_decay=0.99995, memory_length=20000):
         memory = deque(maxlen=memory_length)
         frame_num = 0
         epsilon = epsilon_start
@@ -174,6 +174,8 @@ class Agent:
                 frame_num += 1
                 new_state = self.convert_down_sample(np.array(new_state))
                 self.phi_temp.append(new_state)
+                if is_done:
+                    continue
             # create phi
             state_phi = self.phi()
             # select action according the first phi

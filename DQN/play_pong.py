@@ -26,7 +26,7 @@ class AgentDemo:
         self.env = env
         self.output_video_path = video_output_path
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        self.video_writer = cv2.VideoWriter('output.mp4', fourcc, 20.0, (640, 840))
+        self.video_writer = cv2.VideoWriter('output.mp4', fourcc, 30.0, (640, 840))
         self.env_action_n = self.env.action_space.n
         self.state_value_function = Network.Net(4, self.env_action_n)
         self.k_frames = k_frames
@@ -71,7 +71,7 @@ class AgentDemo:
         for i in range(self.k_frames):
             new_state, r, is_done, others = self.env.step(action)
             cv2.imshow('state', new_state)
-            image_into_video = cv2.resize(new_state, (640, 840))
+            image_into_video = cv2.resize(new_state, (320, 420))
             self.video_writer.write(image_into_video)
             cv2.waitKey(10)
             reward += r
