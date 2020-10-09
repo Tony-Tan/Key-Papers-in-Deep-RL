@@ -13,7 +13,7 @@ import random
 import time
 import os
 import torch.nn.functional as F
-
+import copy
 
 class CustomDataset(utils_data.Dataset):
     """
@@ -36,6 +36,7 @@ class Agent:
         self.env = env
         self.env_action_n = self.env.action_space.n
         self.state_value_function = Network.Net(4, self.env_action_n)
+
         self.k_frames = k_frames
         self.down_sample_size = 84
         self.phi_temp = []
@@ -54,6 +55,7 @@ class Agent:
             file.close()
             print('found model file. \nloading model....')
             self.state_value_function.load_state_dict(torch.load(self.model_path + line))
+        self.state_value_function_hat = copy.deepcopy(self.state_value_function)
 
     def convert_down_sample(self, state):
         """
@@ -131,7 +133,7 @@ class Agent:
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels = data
                 inputs = inputs.to(self.device)
-                outputs = self.state_value_function(inputs)
+                outputs = self.state_value_function_hat(inputs)
                 _, predictions = torch.max(outputs, 1)
                 outputs = outputs.cpu().numpy()
                 predictions = predictions.cpu().numpy()
@@ -167,11 +169,12 @@ class Agent:
             # record
             # self.writer.add_scalar('train/loss', total_loss)
 
-    def running(self, episodes_num, mini_bach_size, epsilon_start=1.0,
+    def running(self, episodes_num, mini_bach_size, t, epsilon_start=1.0,
                 epsilon_end=0.1, epsilon_decay=0.99995, memory_length=20000):
         """
         :param episodes_num: int number, how many episodes would be run
         :param mini_bach_size: int number, the size of mini bach of memory that used to training the value function
+        :param t: time to of updating hat_Q to Q
         :param epsilon_start: float number, epsilon start number, 1.0 for most time
         :param epsilon_end: float number, epsilon end number, 0.1 in the paper
         :param epsilon_decay: float number, decay coefficient of epsilon
@@ -229,6 +232,8 @@ class Agent:
             print("reward of episode: " + str(episode_i) + " is " + str(total_reward)
                   + " and frame number is " + str(frame_num) + ' epsilon: ' + str(epsilon))
             self.writer.add_scalar('reward of episode', total_reward, episode_i)
+            if episode_i % t == 0:
+                self.state_value_function_hat = copy.deepcopy(self.state_value_function)
             # save model files
             if episode_i % 500 == 0:
                 print('model saved')
@@ -243,4 +248,4 @@ class Agent:
 if __name__ == '__main__':
     env = gym.make('Pong-v0')
     agent = Agent(env)
-    agent.running(episodes_num=100000, mini_bach_size=32)
+    agent.running(episodes_num=100000, mini_bach_size=32, t=100)
