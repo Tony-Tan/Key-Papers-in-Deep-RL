@@ -2,23 +2,21 @@ import gym
 import DQN.Network as Network
 import cv2
 import torch.utils.data as utils_data
-from torch.utils.data import DataLoader
 import torch
-import torch.optim as optim
 import numpy as np
 import os
 
 
-class CustomDataset(utils_data.Dataset):
-    def __init__(self, data, labels):
-        self.data = np.array(data)
-        self.labels = labels
-
-    def __getitem__(self, item):
-        return self.data[item], self.labels[item]
-
-    def __len__(self):
-        return len(self.data)
+# class CustomDataset(utils_data.Dataset):
+#     def __init__(self, data, labels):
+#         self.data = np.array(data)
+#         self.labels = labels
+#
+#     def __getitem__(self, item):
+#         return self.data[item], self.labels[item]
+#
+#     def __len__(self):
+#         return len(self.data)
 
 
 class AgentDemo:
@@ -70,6 +68,7 @@ class AgentDemo:
         others = 0
         for i in range(self.k_frames):
             new_state, r, is_done, others = self.env.step(action)
+            # display and record each state
             cv2.imshow('state', new_state)
             image_into_video = cv2.resize(new_state, (320, 420))
             self.video_writer.write(image_into_video)
