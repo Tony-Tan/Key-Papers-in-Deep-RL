@@ -44,7 +44,7 @@ class Agent:
         # networks training configuration
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.criterion = nn.SmoothL1Loss()
-        self.optimizer = optim.Adam(self.state_value_function.parameters(), lr=1e-6)
+        self.optimizer = optim.Adam(self.state_value_function.parameters(), lr=1e-3)
         self.state_value_function.to(self.device)
         self.writer = SummaryWriter("./log/")
         self.model_path = model_path
@@ -167,7 +167,7 @@ class Agent:
             self.optimizer.step()
             total_loss += loss.item()
             # record
-            # self.writer.add_scalar('train/loss', total_loss)
+            self.writer.add_scalar('train/loss', total_loss)
 
     def running(self, episodes_num, mini_bach_size, t, epsilon_start=1.0,
                 epsilon_end=0.1, epsilon_decay=0.99995, memory_length=20000):
@@ -248,4 +248,4 @@ class Agent:
 if __name__ == '__main__':
     env = gym.make('Pong-v0')
     agent = Agent(env)
-    agent.running(episodes_num=100000, mini_bach_size=32, t=100)
+    agent.running(episodes_num=100000, mini_bach_size=32, t=20)
