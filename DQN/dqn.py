@@ -1,8 +1,6 @@
 import gym
 import DQN.Network as Network
 import cv2
-import torch.utils.data as utils_data
-from torch.utils.data import DataLoader
 import torch
 import torch.optim as optim
 import numpy as np
@@ -16,9 +14,12 @@ import torch.nn.functional as F
 
 
 class AgentDQN:
-    def __init__(self, environment, mini_batch_size=32, episodes_num=100000, k_frames=4, input_frame_size=84, memory_length=2e4,
-                 phi_temp_size=4, model_path='./model/', log_path='./log/'):
+    def __init__(self, environment, mini_batch_size=32, episodes_num=100000,
+                 k_frames=4, input_frame_size=84, memory_length=2e4, phi_temp_size=4,
+                 model_path='./model/', log_path='./log/', algorithm_version='2013',
+                 steps_c=10):
         # basic configuration
+        self.__algorithm_version = algorithm_version
         self.__env = environment
         self.__action_n = environment.action_space.n
         self.__mini_batch_size = mini_batch_size
@@ -28,12 +29,15 @@ class AgentDQN:
         self.__phi_temp = deque(maxlen=phi_temp_size)
         self.__phi_temp_size = phi_temp_size
         self.__memory = deque(maxlen=int(memory_length))
+        self.__steps_c = steps_c
         # networks training configuration
         self.state_action_value_function = Network.Net(4, self.__action_n)
+        self.target_state_action_value_function = Network.Net(4, self.__action_n)
         self.__device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.__criterion = nn.SmoothL1Loss()
         self.__optimizer = optim.Adam(self.state_action_value_function.parameters(), lr=1e-6)
         self.state_action_value_function.to(self.__device)
+        self.target_state_action_value_function.to(self.__device)
         self.__writer = SummaryWriter(log_path)
         self.__model_path = model_path
         self.load_existing_model()
@@ -114,7 +118,10 @@ class AgentDQN:
         next_state_max_value = []
         with torch.no_grad():
             inputs = torch.from_numpy(next_state_data).to(self.__device)
-            outputs = self.state_action_value_function(inputs)
+            if self.__algorithm_version == '2015':
+                outputs = self.target_state_action_value_function(inputs)
+            else:
+                outputs = self.state_action_value_function(inputs)
             _, predictions = torch.max(outputs, 1)
             outputs = outputs.cpu().numpy()
             predictions = predictions.cpu().numpy()
@@ -143,7 +150,7 @@ class AgentDQN:
         # record
         self.__writer.add_scalar('train/loss', total_loss)
 
-    def learning_an_episode(self,epsilon):
+    def learning_an_episode(self, epsilon):
         frame_num = 0
         total_reward = 0
         state = self.__env.reset()
@@ -186,10 +193,8 @@ class AgentDQN:
               + " and frame number is " + str(frame_num) + ' epsilon: ' + str(epsilon))
         self.__writer.add_scalar('reward of episode', total_reward, episode_i)
 
-    def learning(self, episodes_num, epsilon_max=1.0,
-                 epsilon_min=0.1, epsilon_decay=0.99995):
+    def learning(self, epsilon_max=1.0, epsilon_min=0.1, epsilon_decay=0.99995):
         """
-        :param episodes_num: int number, how many episodes would be run
         :param epsilon_max: float number, epsilon start number, 1.0 for most time
         :param epsilon_min: float number, epsilon end number, 0.1 in the paper
         :param epsilon_decay: float number, decay coefficient of epsilon
@@ -204,11 +209,14 @@ class AgentDQN:
             frame_num_i, reward_i = self.learning_an_episode(epsilon)
             frame_num += frame_num_i
             self.record_reward(frame_num, reward_i, epsilon, episode_i)
+            if self.__algorithm_version == '2015' and episode_i % self.__steps_c == 0:
+                print('------------------------ updating target state action value function -----------------------')
+                self.target_state_action_value_function.load_state_dict(self.state_action_value_function.state_dict())
             if episode_i % 500 == 0:
                 self.save_model()
 
 
 if __name__ == '__main__':
     env = gym.make('Pong-v0')
-    agent = AgentDQN(env)
+    agent = AgentDQN(env,algorithm_version='2015')
     agent.learning()
