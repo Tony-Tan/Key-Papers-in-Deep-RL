@@ -16,8 +16,8 @@ import torch.nn.functional as F
 class AgentDQN:
     def __init__(self, environment, mini_batch_size=32, episodes_num=100000,
                  k_frames=4, input_frame_size=84, memory_length=2e4, phi_temp_size=4,
-                 model_path='./model/', log_path='./log/', algorithm_version='2013',
-                 steps_c=10):
+                 model_path='./model/', log_path='./log/',
+                 steps_c=10, algorithm_version='2013'):
         # basic configuration
         self._algorithm_version = algorithm_version
         self._env = environment

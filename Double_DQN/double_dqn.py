@@ -17,8 +17,12 @@ import copy
 
 
 class AgentDouble(AgentDQN):
-    def __init__(self, environment):
-        super(AgentDouble, self).__init__(environment, algorithm_version='2015')
+    def __init__(self, environment, mini_batch_size=32, episodes_num=100000,
+                 k_frames=4, input_frame_size=84, memory_length=2e4, phi_temp_size=4,
+                 model_path='./model/', log_path='./log/', steps_c=50):
+        super(AgentDouble, self).__init__(environment, mini_batch_size, episodes_num,
+                                          k_frames, input_frame_size, memory_length, phi_temp_size,
+                                          model_path, log_path, steps_c, algorithm_version='2015')
         self.state_action_value_function_temp = copy.deepcopy(self.state_action_value_function)
 
     def learning(self, epsilon_max=1.0, epsilon_min=0.1, epsilon_decay=0.99995):
@@ -54,5 +58,5 @@ class AgentDouble(AgentDQN):
 
 if __name__ == '__main__':
     env = gym.make('Pong-v0')
-    agent = AgentDouble(env)
-    agent.learning()
+    agent = AgentDouble(env, steps_c=100)
+    agent.learning(epsilon_max=0.1, epsilon_min=0.01)
