@@ -25,7 +25,7 @@ class AgentDouble(AgentDQN):
                                           model_path, log_path, steps_c, algorithm_version='2015')
         self.state_action_value_function_temp = copy.deepcopy(self.state_action_value_function)
 
-    def learning(self, epsilon_max=1.0, epsilon_min=0.1, epsilon_decay=0.99995):
+    def learning(self, epsilon_max=1.0, epsilon_min=0.1, epsilon_decay=0.995):
         """
         :param epsilon_max: float number, epsilon start number, 1.0 for most time
         :param epsilon_min: float number, epsilon end number, 0.1 in the paper

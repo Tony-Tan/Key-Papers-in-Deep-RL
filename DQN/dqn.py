@@ -35,7 +35,7 @@ class AgentDQN:
         self.target_state_action_value_function = Network.Net(4, self._action_n)
         self._device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self._criterion = nn.SmoothL1Loss()
-        self._optimizer = optim.Adam(self.state_action_value_function.parameters(), lr=1e-6)
+        self._optimizer = optim.Adam(self.state_action_value_function.parameters(), lr=1e-5)
         self.state_action_value_function.to(self._device)
         self.target_state_action_value_function.to(self._device)
         self._writer = SummaryWriter(log_path)
@@ -194,7 +194,7 @@ class AgentDQN:
               + " and frame number is " + str(frame_num) + ' epsilon: ' + str(epsilon))
         self._writer.add_scalar('reward of episode', total_reward, episode_i)
 
-    def learning(self, epsilon_max=1.0, epsilon_min=0.1, epsilon_decay=0.99995):
+    def learning(self, epsilon_max=1.0, epsilon_min=0.1, epsilon_decay=0.995):
         """
         :param epsilon_max: float number, epsilon start number, 1.0 for most time
         :param epsilon_min: float number, epsilon end number, 0.1 in the paper
@@ -219,5 +219,5 @@ class AgentDQN:
 
 if __name__ == '__main__':
     env = gym.make('Pong-v0')
-    agent = AgentDQN(env,algorithm_version='2015')
+    agent = AgentDQN(env, algorithm_version='2013')
     agent.learning()
