@@ -16,7 +16,7 @@ import torch.nn.functional as F
 class AgentDQN:
     def __init__(self, environment, mini_batch_size=32, episodes_num=100000,
                  k_frames=4, input_frame_size=84, memory_length=2e4, phi_temp_size=4,
-                 model_path='./model/', log_path='./log/',
+                 model_path='./model/', log_path='./log/', learning_rate=1e-5,
                  steps_c=10, algorithm_version='2013'):
         # basic configuration
         self._algorithm_version = algorithm_version
@@ -35,7 +35,7 @@ class AgentDQN:
         self.target_state_action_value_function = Network.Net(4, self._action_n)
         self._device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self._criterion = nn.SmoothL1Loss()
-        self._optimizer = optim.Adam(self.state_action_value_function.parameters(), lr=1e-5)
+        self._optimizer = optim.Adam(self.state_action_value_function.parameters(), lr=learning_rate)
         self.state_action_value_function.to(self._device)
         self.target_state_action_value_function.to(self._device)
         self._writer = SummaryWriter(log_path)
@@ -218,6 +218,6 @@ class AgentDQN:
 
 
 if __name__ == '__main__':
-    env = gym.make('Pong-v0')
-    agent = AgentDQN(env, algorithm_version='2013')
-    agent.learning()
+    env = gym.make('Breakout-v0')
+    agent = AgentDQN(env, algorithm_version='2015')
+    agent.learning( epsilon_max=1.0, epsilon_min=0.01)

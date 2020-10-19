@@ -1,22 +1,9 @@
 import gym
 import DQN.Network as Network
 import cv2
-import torch.utils.data as utils_data
 import torch
 import numpy as np
 import os
-
-
-# class CustomDataset(utils_data.Dataset):
-#     def __init__(self, data, labels):
-#         self.data = np.array(data)
-#         self.labels = labels
-#
-#     def __getitem__(self, item):
-#         return self.data[item], self.labels[item]
-#
-#     def __len__(self):
-#         return len(self.data)
 
 
 class AgentDemo:
@@ -34,18 +21,14 @@ class AgentDemo:
         self.model_path = model_path
         self.phi_temp = []
         self.phi_temp_size = phi_temp_size
-        if os.path.exists(self.model_path + 'last_model.txt'):
-            file = open(self.model_path + 'last_model.txt', 'r')
-            line = file.readlines()[0]
-            file.close()
+        if os.path.exists(self.model_path + '/trained/pong-v0.pth'):
             print('found model file. \nloading model....')
-            self.state_value_function.load_state_dict(torch.load(self.model_path + line))
+            self.state_value_function.load_state_dict(torch.load(self.model_path + '/trained/pong-v0.pth'))
 
     def convert_down_sample(self, state):
         image = np.array(state)
         gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         gray_img = cv2.resize(gray_img, (84, 100))
-        ret, gray_img = cv2.threshold(gray_img, 80, 255, cv2.THRESH_BINARY)
         return gray_img[100 - 84:100, 0:84] / 255. - 0.5
 
     def select_action(self, state_phi):
@@ -69,8 +52,8 @@ class AgentDemo:
         for i in range(self.k_frames):
             new_state, r, is_done, others = self.env.step(action)
             # display and record each state
-            cv2.imshow('state', new_state)
             image_into_video = cv2.resize(new_state, (320, 420))
+            cv2.imshow('state', image_into_video)
             self.video_writer.write(image_into_video)
             cv2.waitKey(10)
             reward += r
