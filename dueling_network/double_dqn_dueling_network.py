@@ -3,12 +3,14 @@ import random
 from DQN.dqn import AgentDQN
 import copy
 import dueling_network.Network as Network
+import os
+import torch
 
 
 class AgentDouble(AgentDQN):
     def __init__(self, environment, mini_batch_size=32, episodes_num=100000,
                  k_frames=4, input_frame_size=84, memory_length=2e4, phi_temp_size=4,
-                 model_path='./model/', log_path='./log/', learning_rate=1e-5, steps_c=50):
+                 model_path='./model/', log_path='./log/', learning_rate=1e-5, steps_c=10000):
         super(AgentDouble, self).__init__(environment, mini_batch_size, episodes_num,
                                           k_frames, input_frame_size, memory_length, phi_temp_size,
                                           model_path, log_path, learning_rate, steps_c, algorithm_version='2015')
@@ -17,8 +19,9 @@ class AgentDouble(AgentDQN):
         self.state_action_value_function_temp = copy.deepcopy(self.state_action_value_function)
         self.state_action_value_function.to(self._device)
         self.target_state_action_value_function.to(self._device)
+        self.load_existing_model()
 
-    def learning(self, epsilon_max=1.0, epsilon_min=0.1, epsilon_decay=0.9995):
+    def learning(self, epsilon_max=1.0, epsilon_min=0.1, epsilon_decay=0.9999995):
         """
         :param epsilon_max: float number, epsilon start number, 1.0 for most time
         :param epsilon_min: float number, epsilon end number, 0.1 in the paper
@@ -50,6 +53,6 @@ class AgentDouble(AgentDQN):
 
 
 if __name__ == '__main__':
-    env = gym.make('Breakout-v0')
-    agent = AgentDouble(env, steps_c=100)
-    agent.learning(epsilon_max=1.0, epsilon_min=0.01)
+    env = gym.make('Pong-v0')
+    agent = AgentDouble(env, steps_c=10000)
+    agent.learning(epsilon_max=1, epsilon_min=0.1)

@@ -7,7 +7,7 @@ Key papers in deep reinforcement learning suggested by [OpenAI spinningup](https
     - [x] [Playing Atari with Deep Reinforcement Learning](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf), Mnih et al, 2013. *Algorithm: DQN.*
         - [x] [Human-level control through deep reinforcement learning](https://www.datascienceassn.org/sites/default/files/Human-level%20Control%20Through%20Deep%20Reinforcement%20Learning.pdf) , Mnih et al, 2015. *Algorithm: DQN.*
     - [ ] [Deep Recurrent Q-Learning for Partially Observable MDPs](https://arxiv.org/abs/1507.06527), Hausknecht and Stone, 2015. *Algorithm: Deep Recurrent Q-Learning.*
-    - [ ] [Dueling Network Architectures for Deep Reinforcement Learning](https://arxiv.org/abs/1511.06581), Wang et al, 2015. *Algorithm: Dueling DQN.*
+    - [x] [Dueling Network Architectures for Deep Reinforcement Learning](https://arxiv.org/abs/1511.06581), Wang et al, 2015. *Algorithm: Dueling DQN.*
     - [x] [Deep Reinforcement Learning with Double Q-learning](https://arxiv.org/abs/1509.06461), Hasselt et al 2015. *Algorithm: Double DQN.*
     - [x] [Prioritized Experience Replay](https://arxiv.org/abs/1511.05952), Schaul et al, 2015. *Algorithm: Prioritized Experience Replay (PER).*
     - [ ] [Rainbow: Combining Improvements in Deep Reinforcement Learning](https://arxiv.org/abs/1710.02298), Hessel et al, 2017. *Algorithm: Rainbow DQN.*

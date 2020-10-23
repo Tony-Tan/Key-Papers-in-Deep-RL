@@ -213,7 +213,7 @@ class AgentDQN:
             frame_num_i, reward_i = self.learning_an_episode(epsilon)
             frame_num += frame_num_i
             self.record_reward(frame_num, reward_i, epsilon, episode_i)
-            if self._algorithm_version == '2015' and episode_i % self._steps_c == 0:
+            if self._algorithm_version == '2015' and frame_num % self._steps_c == 0:
                 print('------------------------ updating target state action value function -----------------------')
                 self.target_state_action_value_function.load_state_dict(self.state_action_value_function.state_dict())
             if episode_i % 500 == 0:
