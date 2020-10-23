@@ -17,7 +17,7 @@ from DQN.dqn import AgentDQN
 
 class AgentDoublePP(AgentDQN):
     def __init__(self, environment, mini_batch_size=32, episodes_num=100000,
-                 k_frames=4, input_frame_size=84, memory_length=2e4, phi_temp_size=4, learning_rate=4e-5,
+                 k_frames=4, input_frame_size=84, memory_length=2e4, phi_temp_size=4, learning_rate=1e-4,
                  alpha=0.4, beta=0.7, model_path='./model/', log_path='./log/', steps_c=50):
         super(AgentDoublePP, self).__init__(environment, mini_batch_size, episodes_num,
                                             k_frames, input_frame_size, memory_length, phi_temp_size,
@@ -123,7 +123,7 @@ class AgentDoublePP(AgentDQN):
             state_phi = new_state_phi
         return frame_num, total_reward
 
-    def learning(self, epsilon_max=1.0, epsilon_min=0.1, epsilon_decay=0.995):
+    def learning(self, epsilon_max=1.0, epsilon_min=0.1, epsilon_decay=0.9995):
         """
         :param epsilon_max: float number, epsilon start number, 1.0 for most time
         :param epsilon_min: float number, epsilon end number, 0.1 in the paper
@@ -155,6 +155,6 @@ class AgentDoublePP(AgentDQN):
 
 
 if __name__ == '__main__':
-    env = gym.make('Pong-v0')
+    env = gym.make('Breakout-v0')
     agent = AgentDoublePP(env, steps_c=100)
-    agent.learning(epsilon_max=0.1, epsilon_min=0.01)
+    agent.learning()

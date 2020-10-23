@@ -2,6 +2,7 @@ import gym
 import random
 from DQN.dqn import AgentDQN
 import copy
+import dueling_network.Network as Network
 
 
 class AgentDouble(AgentDQN):
@@ -11,7 +12,11 @@ class AgentDouble(AgentDQN):
         super(AgentDouble, self).__init__(environment, mini_batch_size, episodes_num,
                                           k_frames, input_frame_size, memory_length, phi_temp_size,
                                           model_path, log_path, learning_rate, steps_c, algorithm_version='2015')
+        self.state_action_value_function = Network.Net(4, self._action_n)
+        self.target_state_action_value_function = Network.Net(4, self._action_n)
         self.state_action_value_function_temp = copy.deepcopy(self.state_action_value_function)
+        self.state_action_value_function.to(self._device)
+        self.target_state_action_value_function.to(self._device)
 
     def learning(self, epsilon_max=1.0, epsilon_min=0.1, epsilon_decay=0.9995):
         """

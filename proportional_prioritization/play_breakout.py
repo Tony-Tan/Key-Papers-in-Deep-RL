@@ -11,7 +11,7 @@ class AgentDemo:
         self.env = env
         self.output_video_path = video_output_path
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        self.video_writer = cv2.VideoWriter('output.mp4', fourcc, 30.0, (640, 840))
+        self.video_writer = cv2.VideoWriter('output.mp4', fourcc, 30.0, (320, 420))
         self.env_action_n = self.env.action_space.n
         self.state_value_function = Network.Net(4, self.env_action_n)
         self.k_frames = k_frames
@@ -21,9 +21,9 @@ class AgentDemo:
         self.model_path = model_path
         self.phi_temp = []
         self.phi_temp_size = phi_temp_size
-        if os.path.exists(self.model_path + '/trained/pong-v0.pth'):
+        if os.path.exists(self.model_path + '/trained/breakout-v0.pth'):
             print('found model file. \nloading model....')
-            self.state_value_function.load_state_dict(torch.load(self.model_path + '/trained/pong-v0.pth'))
+            self.state_value_function.load_state_dict(torch.load(self.model_path + '/trained/breakout-v0.pth'))
 
     def convert_down_sample(self, state):
         image = np.array(state)
@@ -52,7 +52,7 @@ class AgentDemo:
         for i in range(self.k_frames):
             new_state, r, is_done, others = self.env.step(action)
             # display and record each state
-            image_into_video = cv2.resize(new_state, (640, 840))
+            image_into_video = cv2.resize(new_state, (320, 420))
             image_into_video = cv2.cvtColor(image_into_video, cv2.COLOR_RGB2BGR)
             cv2.imshow('state', image_into_video)
             self.video_writer.write(image_into_video)
@@ -93,6 +93,6 @@ class AgentDemo:
 
 
 if __name__ == '__main__':
-    env = gym.make('Pong-v0')
+    env = gym.make('Breakout-v0')
     agent = AgentDemo(env)
     agent.play(10)

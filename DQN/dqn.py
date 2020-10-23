@@ -60,7 +60,10 @@ class AgentDQN:
         image = np.array(state)
         gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         gray_img = cv2.resize(gray_img, (self._input_frame_size, 100))
-        gray_img = gray_img[100 - self._input_frame_size:100, 0:self._input_frame_size]/255. - 0.5
+        gray_img = gray_img[100 - self._input_frame_size:100, 0:self._input_frame_size]
+        # cv2.imshow('debug', gray_img)
+        # cv2.waitKey(0)
+        gray_img = gray_img / 255. - 0.5
         self._phi_temp.append(gray_img)
 
     def select_action(self, state_phi, epsilon):
@@ -220,4 +223,4 @@ class AgentDQN:
 if __name__ == '__main__':
     env = gym.make('Breakout-v0')
     agent = AgentDQN(env, algorithm_version='2015')
-    agent.learning( epsilon_max=1.0, epsilon_min=0.01)
+    agent.learning(epsilon_max=1.0, epsilon_min=0.01)
