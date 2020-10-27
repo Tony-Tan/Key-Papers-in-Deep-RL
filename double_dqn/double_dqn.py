@@ -13,7 +13,7 @@ class AgentDouble(AgentDQN):
                                           model_path, log_path, learning_rate, steps_c, algorithm_version='2015')
         self.state_action_value_function_temp = copy.deepcopy(self.state_action_value_function)
 
-    def learning(self, epsilon_max=1.0, epsilon_min=0.1, epsilon_decay=0.9995):
+    def learning(self, epsilon_max=1.0, epsilon_min=0.1, epsilon_decay=0.9999):
         """
         :param epsilon_max: float number, epsilon start number, 1.0 for most time
         :param epsilon_min: float number, epsilon end number, 0.1 in the paper
@@ -45,6 +45,6 @@ class AgentDouble(AgentDQN):
 
 
 if __name__ == '__main__':
-    env = gym.make('Breakout-v0')
+    env = gym.make('Pong-v0')
     agent = AgentDouble(env, steps_c=100)
     agent.learning(epsilon_max=1.0, epsilon_min=0.01)

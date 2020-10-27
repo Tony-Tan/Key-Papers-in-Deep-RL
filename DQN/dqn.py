@@ -15,9 +15,9 @@ import torch.nn.functional as F
 
 class AgentDQN:
     def __init__(self, environment, mini_batch_size=32, episodes_num=100000,
-                 k_frames=4, input_frame_size=84, memory_length=2e4, phi_temp_size=4,
+                 k_frames=4, input_frame_size=84, memory_length=1.5e4, phi_temp_size=4,
                  model_path='./model/', log_path='./log/', learning_rate=1e-5,
-                 steps_c=10, algorithm_version='2013'):
+                 steps_c=100, algorithm_version='2013'):
         # basic configuration
         self._algorithm_version = algorithm_version
         self._env = environment
@@ -65,6 +65,7 @@ class AgentDQN:
         # cv2.waitKey(0)
         gray_img = gray_img / 255. - 0.5
         self._phi_temp.append(gray_img)
+        return gray_img
 
     def select_action(self, state_phi, epsilon):
         """
@@ -115,7 +116,12 @@ class AgentDQN:
         # training parameter
         total_loss = 0
         # build label:
-        next_state_data = np.array([mem[3] for mem in memory])
+        next_state_data = []
+        for mem in memory:
+            next_state_data_m = list(mem[0][1:4])
+            next_state_data_m.append(mem[3])
+            next_state_data.append(next_state_data_m)
+        next_state_data = np.array(next_state_data).astype(np.float32)
         reward_array = np.array([mem[2] for mem in memory])
         action_array = np.array([[int(mem[1])] for mem in memory])
         state_data = np.array([mem[0] for mem in memory])
@@ -166,19 +172,19 @@ class AgentDQN:
             self.pre_process_and_add_state_into_phi_temp(new_state)
             if is_done:
                 return is_done
-        state_phi = self.phi()
         while not is_done:
+            state_phi = self.phi()
             action = self.select_action(state_phi, epsilon)
             new_state, reward, is_done, _ = self.skip_k_frame(action)
             frame_num += 1
             total_reward += reward
-            self.pre_process_and_add_state_into_phi_temp(new_state)
-            new_state_phi = self.phi()
-            self._memory.append([state_phi, action, reward, new_state_phi, is_done])
+            new_state_x = self.pre_process_and_add_state_into_phi_temp(new_state)
+            # new_state_phi = self.phi()
+            self._memory.append([state_phi, action, reward, new_state_x, is_done])
             if len(self._memory) > self._mini_batch_size:
                 sub_memory = random.sample(self._memory, self._mini_batch_size)
                 self.train_network(memory=sub_memory)
-            state_phi = new_state_phi
+            # state_phi = new_state_phi
         return frame_num, total_reward
 
     def save_model(self):
@@ -197,7 +203,7 @@ class AgentDQN:
               + " and frame number is " + str(frame_num) + ' epsilon: ' + str(epsilon))
         self._writer.add_scalar('reward of episode', total_reward, episode_i)
 
-    def learning(self, epsilon_max=1.0, epsilon_min=0.1, epsilon_decay=0.995):
+    def learning(self, epsilon_max=1.0, epsilon_min=0.1, epsilon_decay=0.9999):
         """
         :param epsilon_max: float number, epsilon start number, 1.0 for most time
         :param epsilon_min: float number, epsilon end number, 0.1 in the paper
@@ -213,7 +219,7 @@ class AgentDQN:
             frame_num_i, reward_i = self.learning_an_episode(epsilon)
             frame_num += frame_num_i
             self.record_reward(frame_num, reward_i, epsilon, episode_i)
-            if self._algorithm_version == '2015' and frame_num % self._steps_c == 0:
+            if self._algorithm_version == '2015' and episode_i % self._steps_c == 0:
                 print('------------------------ updating target state action value function -----------------------')
                 self.target_state_action_value_function.load_state_dict(self.state_action_value_function.state_dict())
             if episode_i % 500 == 0:
