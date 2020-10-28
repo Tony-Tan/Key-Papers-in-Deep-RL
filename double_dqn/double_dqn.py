@@ -7,7 +7,7 @@ import copy
 class AgentDouble(AgentDQN):
     def __init__(self, environment, mini_batch_size=32, episodes_num=100000,
                  k_frames=4, input_frame_size=84, memory_length=2e4, phi_temp_size=4,
-                 model_path='./model/', log_path='./log/', learning_rate=0.00025, steps_c=10000):
+                 model_path='./model/', log_path='./log/', learning_rate=0.00025, steps_c=100):
         super(AgentDouble, self).__init__(environment, mini_batch_size, episodes_num,
                                           k_frames, input_frame_size, memory_length, phi_temp_size,
                                           model_path, log_path, learning_rate, steps_c, algorithm_version='2015')
