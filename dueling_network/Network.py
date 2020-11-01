@@ -24,11 +24,9 @@ class Net(nn.Module):
         x_state_value = self.fc_1_stat_value(x)
         x_state_value = F.relu(x_state_value)
         x_state_value = self.fc_2_stat_value(x_state_value)
-        x_state_value = F.relu(x_state_value)
 
         x_advantage = self.fc_1_advantage(x)
         x_advantage = F.relu(x_advantage)
         x_advantage = self.fc_2_advantage(x_advantage)
-        x_advantage = F.relu(x_advantage)
-        output = x_state_value + x_advantage
+        output = x_state_value + x_advantage - x_advantage.mean()
         return output
